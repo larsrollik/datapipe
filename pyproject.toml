@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "datapipe"
+version = "0.1.0"
+description = "Dataset-aware processing & moving pipeline (registration, segmentation, compress, finalize) for lab acquisition data."
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6",   # parse StitchIt recipe_*.yml
+]
+
+[project.scripts]
+datapipe = "datapipe.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "mypy", "ruff"]
+
+# NOTE: a later `compress` stage will add `datapack` as a dep (workspace source);
+# not yet wired since this stage only needs the loader + brainreg.
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/datapipe"]
+
+[tool.ruff]
+line-length = 88
+src = ["src"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true

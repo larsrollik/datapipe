@@ -1,0 +1,36 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# uv
+uv.lock
+
+# Caches / tooling
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.runlogs/
+.coverage
+.coverage.*
+htmlcov/
+
+# hatch-vcs generated
+src/*/_version.py
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
