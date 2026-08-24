@@ -20,6 +20,14 @@ from datapipe.models.serialsection import (
     is_sample,
     load_sample,
 )
+from datapipe.place import (
+    PlacementError,
+    append_step,
+    datapack_command,
+    placement_record,
+    plan_placement,
+    write_manifests,
+)
 from datapipe.register import (
     DEFAULT_ATLAS,
     DEFAULT_CHANNEL,
@@ -119,7 +127,62 @@ def _build_parser() -> argparse.ArgumentParser:
     c.add_argument("--datapack", help="path to the datapack CLI (or $DATAPACK / PATH)")
     c.add_argument("--dry-run", action="store_true", help="print the datapack commands only")
     c.set_defaults(func=_cmd_compress)
+
+    pl = sub.add_parser(
+        "place",
+        help="file ONE serial_section sample into a data tree, refusing on identity mismatch",
+    )
+    pl.add_argument("sample", type=Path, help="a serial_section sample directory")
+    pl.add_argument("subject", help="subject to file it under; checked against the scan's own record")
+    pl.add_argument("data_root", type=Path, help="data tree root (<root>/<subject>/... is created)")
+    pl.add_argument(
+        "--roster",
+        type=Path,
+        help="LEGACY only: subject map relating a pre-migration rig name to a namespace id. "
+             "Current scans name their own subject and need none.",
+    )
+    pl.add_argument("--codec", choices=["deflate", "zstd"], default="deflate")
+    pl.add_argument("--datapack", help="path to the datapack CLI (or $DATAPACK / PATH)")
+    pl.add_argument(
+        "--dry-run", action="store_true",
+        help="check identity and print the destination and command; write nothing",
+    )
+    pl.set_defaults(func=_cmd_place)
     return parser
+
+
+def _cmd_place(args: argparse.Namespace) -> int:
+    """Check, then file. The check is not a separate step that can be skipped."""
+    try:
+        plan = plan_placement(args.sample, args.subject, args.data_root, roster=args.roster)
+    except (PlacementError, SerialSectionError) as exc:
+        print(f"datapipe place: {exc}", file=sys.stderr)
+        return 2
+
+    print(f"  scan identity : {sorted(plan.identity.names)}")
+    print(f"  datetime      : {plan.datetime_str}  (from {plan.datetime_source})")
+    print(f"  destination   : {plan.acq_dir}")
+
+    try:
+        datapack = resolve_datapack(args.datapack)
+    except CompressError as exc:
+        print(f"datapipe place: {exc}", file=sys.stderr)
+        return 2
+    cmd = datapack_command(plan, datapack, codec=args.codec)
+
+    if args.dry_run:
+        print(f"  would run     : {shlex.join(cmd)}")
+        return 0
+
+    write_manifests(plan)
+    rc = subprocess.call(cmd)
+    if rc != 0:
+        print(f"datapipe place: datapack exited {rc}; manifests written, data not packed",
+              file=sys.stderr)
+        return rc
+    append_step(plan.acq_dir, placement_record(plan))
+    print(f"  placed        : {plan.acq_dir}")
+    return 0
 
 
 def _cmd_compress(args: argparse.Namespace) -> int:
