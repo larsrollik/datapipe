@@ -3,8 +3,12 @@
 Segmentation is inherently manual (a napari plugin — a human draws regions/tracks),
 so this stage doesn't automate it: it opens napari with the brainglobe-segmentation
 widget **preloaded** on a sample's brainreg output, so you start drawing immediately.
-Output saves to ``manual_segmentation/`` next to the registration. It's the manual
-gate: GUI, workstation, not parallelizable.
+The widget saves inside the registration directory, under
+``segmentation/atlas_space/`` or ``segmentation/sample_space/`` depending on the space
+it was opened in (brainglobe-segmentation 1.3.3; older versions wrote
+``manual_segmentation/``), so tracks land in ``segmentation/atlas_space/tracks/*.npy``
+-- which is where the database looks for them. It's the manual gate: GUI, workstation,
+not parallelizable.
 
 napari + brainglobe-segmentation live in a separate env (the uv ``~/.venvs/brainglobe``,
 no conda); resolve its python via ``--napari-python`` / ``$DATAPIPE_NAPARI_PYTHON`` /

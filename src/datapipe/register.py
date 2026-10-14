@@ -2,7 +2,7 @@
 
 Wraps ``brainreg`` with the pre-processing it needs: locate the sample, pull the
 registration channel + voxel sizes (from the recipe), and run brainreg with the
-lab defaults (atlas ``allen_mouse_10um``, orientation ``psl``), writing the output
+lab defaults (atlas ``allen_mouse_10um``, orientation ``psr``), writing the output
 **next to the stitched dirs** (``<sample>/registration``). The source is only read.
 
 ``brainreg`` is resolved from ``--brainreg`` / ``$BRAINREG`` / PATH and is *not* a
