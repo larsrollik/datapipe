@@ -29,13 +29,27 @@ import yaml
 
 from datapipe.models.serialsection import SerialSectionSample, load_sample
 
-# BakingTray writes every section into a directory named for the sample: "... in directory F:\EJT38\..."
+# BakingTray writes every section into the RUN directory: "... in directory F:\EJT38\...". One run
+# can hold several brains, and then that name carries each of their ids: "HL_t013_t017_FPOF10".
 _ACQLOG_SAMPLE = re.compile(r"in directory\s+[A-Za-z]:\\([^\\]+)\\", re.IGNORECASE)
 _ACQ_TIME = "%Y/%m/%d %H:%M:%S"
 
 
 class PlacementError(Exception):
     """Raised when a scan cannot be filed as asked. Never downgraded to a warning."""
+
+
+def _id_tokens(name: str) -> set[str]:
+    """The identifier-shaped tokens of a name: those carrying a digit, lowercased.
+
+    "t013" and "GPe160" say which animal this is; "HL", "sample" and "GPe" do not, so they cannot
+    reconcile two names that disagree.
+    """
+    return {
+        part.lower()
+        for part in re.split(r"[^A-Za-z0-9]+", name or "")
+        if part and any(ch.isdigit() for ch in part)
+    }
 
 
 @dataclass
@@ -54,9 +68,34 @@ class Identity:
         return out
 
     @property
+    def unreconciled(self) -> set[str]:
+        """Log names that cannot be reconciled with the recipe's sample ID.
+
+        The log names the acquisition RUN, not the sample, and a run can hold several brains: a
+        two-brain run writes "HL_t013_t017_FPOF10" into every section's path and is split per
+        animal afterwards. A run whose name carries the recipe's own identifier corroborates it
+        rather than contradicting it, so comparing the two strings for equality reports eleven of
+        the fifteen GPe scans as self-contradictory when none of them is.
+
+        Reconciliation is on identifier-shaped tokens only, the ones carrying a digit, so
+        "sample_161" is reconciled with "HL_GPe_161_202" through 161 while the words they share,
+        "sample", "HL" and "GPe", count for nothing. That makes this corroboration between two
+        records of the same run; binding the run to an animal is the subject check below.
+        """
+        if not self.recipe_id:
+            # Nothing to reconcile against: two different run names are then a real ambiguity.
+            return set() if len(self.acqlog_ids) <= 1 else set(self.acqlog_ids)
+        wanted = _id_tokens(self.recipe_id)
+        return {
+            name
+            for name in self.acqlog_ids
+            if name != self.recipe_id and not (wanted & _id_tokens(name))
+        }
+
+    @property
     def internally_consistent(self) -> bool:
         """Do the recipe and the log agree? They are written by different parts of the rig."""
-        return len(self.names) <= 1
+        return not self.unreconciled
 
 
 def read_identity(sample: SerialSectionSample) -> Identity:
@@ -122,8 +161,10 @@ def check_identity(ident: Identity, subject: str, roster: Path | str | None) -> 
 
     if not ident.internally_consistent:
         problems.append(
-            f"the scan disagrees with itself: {sorted(ident.names)}. The recipe and the acquisition "
-            f"log name different samples, so neither can be trusted without the acquisition record."
+            f"the scan disagrees with itself: the recipe names {ident.recipe_id!r} and the "
+            f"acquisition log names {sorted(ident.unreconciled)}, sharing no identifier. The two "
+            f"are written by different parts of the rig, so neither can be trusted without the "
+            f"acquisition record."
         )
 
     aliases = subject_aliases(subject, roster)
