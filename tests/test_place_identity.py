@@ -81,3 +81,33 @@ def test_a_scan_that_states_no_identity_is_refused():
     problems = check_identity(Identity(), "t013_acute_m1102591_211", roster=None)
     assert len(problems) == 1
     assert "states no sample identity" in problems[0]
+
+
+def test_register_output_dir_overrides_the_composed_path(tmp_path):
+    """The namespace files a registration as its own acquisition, not as <root>/<sample>/registration."""
+    from datapipe.models.serialsection import SerialSectionSample
+    from datapipe.register import plan_registration
+
+    sample_dir = tmp_path / "t013_acute_m1102591_211__20261012_141941__serial_section"
+    channel = sample_dir / "stitchedImages_100" / "3"
+    channel.mkdir(parents=True)
+    sample = SerialSectionSample(
+        path=sample_dir,
+        sample_id="t013",
+        acq_datetime=None,
+        voxel_um=(20.0, 1.983, 1.983),
+        recipe_path=None,
+        finished=True,
+        stitched_dir=sample_dir / "stitchedImages_100",
+        channels={"3": channel},
+        downsampled_res={},
+    )
+    explicit = tmp_path / "derivative" / "t013__histology" / "t013__brainreg"
+
+    assert plan_registration(sample).output_dir == sample_dir / "registration"
+    assert plan_registration(sample, analysis_root=tmp_path / "a").output_dir == (
+        tmp_path / "a" / sample_dir.name / "registration"
+    )
+    # explicit wins, and is taken verbatim rather than composed
+    plan = plan_registration(sample, analysis_root=tmp_path / "a", output_dir=explicit)
+    assert plan.output_dir == explicit

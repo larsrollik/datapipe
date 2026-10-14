@@ -87,6 +87,7 @@ def plan_registration(
     source: str = "full",  # "full" (stitched + recipe voxel) | "downsampled"
     res_micron: int = 25,
     analysis_root: Path | str | None = None,
+    output_dir: Path | str | None = None,
     extra_args: tuple[str, ...] = (),
     additional_channels: tuple[str, ...] = (),
 ) -> RegistrationPlan:
@@ -96,6 +97,11 @@ def plan_registration(
     ``analysis_root`` is given — mirroring the raw sample structure so a read-only
     raw tree and the writable analysis tree overlay cleanly — otherwise in-place at
     ``<sample>/registration``.
+
+    ``output_dir`` names the directory outright, for a tree whose layout is not
+    ``<root>/<sample>/registration``: the dreamteam namespace files a registration as its
+    own acquisition, ``derivative/<subject>/<session>__histology/<session>__brainreg``, and
+    composing that from a root is not possible. It takes precedence over ``analysis_root``.
     """
     if source == "full":
         input_path = sample.stitched_channel(channel)
@@ -119,15 +125,17 @@ def plan_registration(
         else:
             additional_paths.append(sample.downsampled_stack(res_micron, ac))
 
-    if analysis_root is not None:
-        output_dir = Path(analysis_root) / sample.path.name / OUTPUT_DIRNAME
+    if output_dir is not None:
+        out = Path(output_dir)
+    elif analysis_root is not None:
+        out = Path(analysis_root) / sample.path.name / OUTPUT_DIRNAME
     else:
-        output_dir = sample.path / OUTPUT_DIRNAME
+        out = sample.path / OUTPUT_DIRNAME
 
     return RegistrationPlan(
         sample_id=sample.sample_id,
         input_path=input_path,
-        output_dir=output_dir,
+        output_dir=out,
         voxel_zyx=voxel,
         atlas=atlas,
         orientation=orientation,

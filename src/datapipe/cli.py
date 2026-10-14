@@ -73,6 +73,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="write derived output to <analysis_root>/<sample>/registration (mirrors the "
         "raw tree so RO-raw + RW-analysis overlay cleanly); default = in-place beside the data",
     )
+    r.add_argument(
+        "--output", type=Path,
+        help="write the registration to THIS directory, for a tree that is not "
+             "<root>/<sample>/registration (e.g. the namespace's "
+             "derivative/<subject>/<session>__histology/<session>__brainreg). "
+             "Takes precedence over --analysis-root.",
+    )
     r.add_argument("--brainreg", help="path to brainreg (or $BRAINREG / PATH)")
     r.add_argument(
         "--brainreg-extra", default="",
@@ -241,6 +248,7 @@ def _cmd_register(args: argparse.Namespace) -> int:
             source=args.source,
             res_micron=args.res,
             analysis_root=args.analysis_root,
+            output_dir=args.output,
             extra_args=tuple(shlex.split(args.brainreg_extra)),
             additional_channels=additional,
         )
