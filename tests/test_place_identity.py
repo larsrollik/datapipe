@@ -111,3 +111,32 @@ def test_register_output_dir_overrides_the_composed_path(tmp_path):
     # explicit wins, and is taken verbatim rather than composed
     plan = plan_registration(sample, analysis_root=tmp_path / "a", output_dir=explicit)
     assert plan.output_dir == explicit
+
+
+def test_output_state_separates_a_crashed_run_from_a_finished_one(tmp_path):
+    """A skip is idempotence on a complete output and a hidden failure on a partial one."""
+    from datapipe.register import REGISTRATION_OUTPUTS, output_state
+
+    absent = tmp_path / "nothing"
+    assert output_state(absent) == ("absent", list(REGISTRATION_OUTPUTS))
+
+    # what the t013 crash left behind: the json, a log, and niftyreg/
+    partial = tmp_path / "partial"
+    (partial / "niftyreg").mkdir(parents=True)
+    (partial / "brainreg.json").write_text("{}")
+    (partial / "brainreg_2026-10-14_22-38-49.log").write_text("")
+    state, missing = output_state(partial)
+    assert state == "partial"
+    assert "registered_atlas.tiff" in missing
+    assert "brainreg.json" not in missing
+
+    complete = tmp_path / "complete"
+    complete.mkdir()
+    for name in REGISTRATION_OUTPUTS:
+        (complete / name).write_text("x")
+    assert output_state(complete) == ("complete", [])
+
+    # an empty directory is absent rather than partial: nothing ran, nothing to clear
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert output_state(empty)[0] == "absent"

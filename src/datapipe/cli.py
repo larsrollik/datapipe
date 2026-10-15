@@ -29,6 +29,7 @@ from datapipe.place import (
     write_manifests,
 )
 from datapipe.register import (
+    output_state,
     DEFAULT_ATLAS,
     DEFAULT_CHANNEL,
     DEFAULT_ORIENTATION,
@@ -263,10 +264,18 @@ def _cmd_register(args: argparse.Namespace) -> int:
         return 0
 
     if plan.output_dir.exists() and any(plan.output_dir.iterdir()) and not args.overwrite:
+        state, missing = output_state(plan.output_dir)
+        if state == "complete":
+            # idempotent: re-running a cohort must not fail on the samples already registered
+            print(f"skip: {plan.output_dir} is already a complete registration")
+            return 0
         print(
-            f"skip: {plan.output_dir} already exists — use --overwrite", file=sys.stderr
+            f"REFUSE: {plan.output_dir} holds a PARTIAL registration, missing "
+            f"{', '.join(missing)}. A skip here would report a registration that never ran as a "
+            f"success. Clear the directory and re-run, or pass --overwrite.",
+            file=sys.stderr,
         )
-        return 0
+        return 3
 
     rc = run_registration(plan, brainreg=brainreg)
     if rc != 0:

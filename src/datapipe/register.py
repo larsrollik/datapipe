@@ -26,6 +26,35 @@ DEFAULT_ORIENTATION = "psr"
 DEFAULT_CHANNEL = "3"  # autofluorescence / registration channel (green)
 OUTPUT_DIRNAME = "registration"
 
+#: what brainreg leaves behind when it finishes. A crashed run leaves the directory, its log and a
+#: niftyreg/ subdirectory, which a presence test reads as done.
+REGISTRATION_OUTPUTS = (
+    "brainreg.json",
+    "registered_atlas.tiff",
+    "registered_hemispheres.tiff",
+    "boundaries.tiff",
+    "volumes.csv",
+)
+
+
+def output_state(output_dir: Path | str) -> tuple[str, list[str]]:
+    """('absent' | 'partial' | 'complete', missing_files) for a registration output directory.
+
+    The distinction is the whole point. Skipping a COMPLETE output is idempotence, and re-running a
+    cohort should not fail on the samples already done. Skipping a PARTIAL one hides a registration
+    that never happened: t013 crashed in the atlas load, left brainreg.json, a log and niftyreg/,
+    and the re-run then skipped it and exited 0, so the batch system recorded a success for a brain
+    with no registered atlas.
+    """
+    d = Path(output_dir)
+    if not d.is_dir():
+        return "absent", list(REGISTRATION_OUTPUTS)
+    found = {f.name for f in d.rglob("*") if f.is_file()}
+    missing = [f for f in REGISTRATION_OUTPUTS if f not in found]
+    if not found:
+        return "absent", missing
+    return ("complete", []) if not missing else ("partial", missing)
+
 
 class RegistrationError(RuntimeError):
     """Raised when a sample can't be registered or brainreg is unavailable."""
