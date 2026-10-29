@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import argparse
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 from datapipe.compress import CompressError, compress_commands, resolve_datapack
-
 from datapipe.models.serialsection import (
     SerialSectionError,
     is_sample,
@@ -28,12 +28,16 @@ from datapipe.place import (
     plan_placement,
     write_manifests,
 )
+from datapipe.place_session import (
+    looks_like_session,
+    plan_session_placement,
+)
 from datapipe.register import (
-    output_state,
     DEFAULT_ATLAS,
     DEFAULT_CHANNEL,
     DEFAULT_ORIENTATION,
     RegistrationError,
+    output_state,
     plan_registration,
     resolve_brainreg,
     run_registration,
@@ -159,8 +163,50 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _cmd_place_session(args: argparse.Namespace) -> int:
+    """File an acquisition session. Same contract as a scan: check, then file, never skip.
+
+    A session is moved rather than repacked -- compression is stage 2 and has already run by the
+    time anything is placed, so doing it again here would recompress an artifact that was verified
+    once already.
+    """
+    try:
+        plan = plan_session_placement(
+            args.sample, args.subject, args.data_root, roster=args.roster
+        )
+    except PlacementError as exc:
+        print(f"datapipe place: {exc}", file=sys.stderr)
+        return 2
+
+    ident = plan.identity
+    print(f"  session        : {ident.session_name or plan.source.name}")
+    print(f"  recorded as    : {sorted(ident.recorded_names)}")
+    print(f"  acquisitions   : {ident.n_acquisitions}")
+    print(f"  destination    : {plan.session_dir}")
+
+    if args.dry_run:
+        print(f"  would move     : {plan.source} -> {plan.session_dir}")
+        return 0
+
+    if plan.session_dir.exists():
+        print(
+            f"datapipe place: {plan.session_dir} already exists; refusing to merge two sessions "
+            f"into one directory",
+            file=sys.stderr,
+        )
+        return 2
+    plan.session_dir.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(plan.source), str(plan.session_dir))
+    print(f"  placed         : {plan.session_dir}")
+    return 0
+
+
 def _cmd_place(args: argparse.Namespace) -> int:
     """Check, then file. The check is not a separate step that can be skipped."""
+    # Route on what the directory is rather than on a flag the caller has to remember: a session
+    # and a scan are both "place this under that subject", and the identity records differ.
+    if looks_like_session(args.sample):
+        return _cmd_place_session(args)
     try:
         plan = plan_placement(args.sample, args.subject, args.data_root, roster=args.roster)
     except (PlacementError, SerialSectionError) as exc:
