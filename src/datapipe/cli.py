@@ -142,10 +142,24 @@ def _build_parser() -> argparse.ArgumentParser:
 
     pl = sub.add_parser(
         "place",
-        help="file ONE serial_section sample into a data tree, refusing on identity mismatch",
+        help="file ONE scan or acquisition session into a data tree, refusing on identity mismatch",
+        description=(
+            "Takes either a serial_section sample or an acquisition session, and routes on what the "
+            "directory IS rather than on a flag you have to remember. A scan is repacked into the "
+            "tree; a session is moved, because compression is stage 2 and has already run by the "
+            "time anything is placed.\n\n"
+            "The subject is checked against the directory's own record and a mismatch is refused, "
+            "not warned about. For an acquisition session that record is the full prefix -- "
+            "`seq216_m1103158_308`, not its middle field."
+        ),
     )
-    pl.add_argument("sample", type=Path, help="a serial_section sample directory")
-    pl.add_argument("subject", help="subject to file it under; checked against the scan's own record")
+    pl.add_argument(
+        "sample", type=Path, help="a serial_section sample directory, OR an acquisition session directory"
+    )
+    pl.add_argument(
+        "subject",
+        help="subject to file it under; checked against the scan's or session's own record",
+    )
     pl.add_argument("data_root", type=Path, help="data tree root (<root>/<subject>/... is created)")
     pl.add_argument(
         "--roster",
@@ -157,7 +171,7 @@ def _build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--datapack", help="path to the datapack CLI (or $DATAPACK / PATH)")
     pl.add_argument(
         "--dry-run", action="store_true",
-        help="check identity and print the destination and command; write nothing",
+        help="check identity and print the destination and what would move; write nothing",
     )
     pl.set_defaults(func=_cmd_place)
     return parser
