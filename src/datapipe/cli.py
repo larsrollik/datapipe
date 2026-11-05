@@ -43,6 +43,7 @@ from datapipe.register import (
     run_registration,
 )
 from datapipe.segment import SegmentError, launch_segment
+from datapipe.splits import SplitsError, as_json, find_splits, render
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -56,43 +57,58 @@ def _build_parser() -> argparse.ArgumentParser:
         help="brainreg-register ONE serial_section sample (output beside stitched dirs)",
     )
     r.add_argument("sample", type=Path, help="a single serial_section sample directory")
-    r.add_argument("--channel", default=DEFAULT_CHANNEL, help="autofluo/registration channel")
+    r.add_argument(
+        "--channel", default=DEFAULT_CHANNEL, help="autofluo/registration channel"
+    )
     r.add_argument("--atlas", default=DEFAULT_ATLAS)
     r.add_argument("--orientation", default=DEFAULT_ORIENTATION)
     r.add_argument(
-        "--source", choices=["full", "downsampled"], default="full",
+        "--source",
+        choices=["full", "downsampled"],
+        default="full",
         help="full = stitched channel + recipe voxel; downsampled = ds stack at --res",
     )
     r.add_argument("--res", type=int, default=25, help="µm, when --source downsampled")
     r.add_argument(
-        "--main-only", action="store_true",
+        "--main-only",
+        action="store_true",
         help="register ONLY the main channel (default: all stitched channels, so every "
         "channel transforms into atlas space and auto-loads together)",
     )
     r.add_argument(
-        "--additional", nargs="*", metavar="CH", default=None,
+        "--additional",
+        nargs="*",
+        metavar="CH",
+        default=None,
         help="specific extra channel numbers to register (-a); default = all other channels",
     )
     r.add_argument(
-        "--analysis-root", type=Path,
+        "--analysis-root",
+        type=Path,
         help="write derived output to <analysis_root>/<sample>/registration (mirrors the "
         "raw tree so RO-raw + RW-analysis overlay cleanly); default = in-place beside the data",
     )
     r.add_argument(
-        "--output", type=Path,
+        "--output",
+        type=Path,
         help="write the registration to THIS directory, for a tree that is not "
-             "<root>/<sample>/registration (e.g. the namespace's "
-             "derivative/<subject>/<session>__histology/<session>__brainreg). "
-             "Takes precedence over --analysis-root.",
+        "<root>/<sample>/registration (e.g. the namespace's "
+        "derivative/<subject>/<session>__histology/<session>__brainreg). "
+        "Takes precedence over --analysis-root.",
     )
     r.add_argument("--brainreg", help="path to brainreg (or $BRAINREG / PATH)")
     r.add_argument(
-        "--brainreg-extra", default="",
+        "--brainreg-extra",
+        default="",
         help="extra args forwarded verbatim to brainreg, as a quoted string "
         "(e.g. --brainreg-extra '--n-free-cpus 8' to cap RAM/CPU)",
     )
-    r.add_argument("--overwrite", action="store_true", help="re-run even if registration/ exists")
-    r.add_argument("--dry-run", action="store_true", help="print the brainreg command only")
+    r.add_argument(
+        "--overwrite", action="store_true", help="re-run even if registration/ exists"
+    )
+    r.add_argument(
+        "--dry-run", action="store_true", help="print the brainreg command only"
+    )
     r.set_defaults(func=_cmd_register)
 
     g = sub.add_parser(
@@ -100,17 +116,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="open napari + brainglobe-segmentation preloaded on ONE sample's registration",
     )
     g.add_argument(
-        "sample", type=Path,
+        "sample",
+        type=Path,
         help="a registration dir (contains brainreg.json) OR a sample dir (+ --analysis-root)",
     )
     g.add_argument(
-        "--analysis-root", type=Path,
+        "--analysis-root",
+        type=Path,
         help="analysis ROOT (not the per-sample path); resolves "
         "<analysis_root>/<sample>/registration. Ignored if the positional is already a "
         "registration dir. Default: in-place <sample>/registration",
     )
     g.add_argument(
-        "--sample-space", action="store_true",
+        "--sample-space",
+        action="store_true",
         help="segment in sample space (default: atlas space — trace in the reference "
         "frame so tracks need no sample→atlas transform)",
     )
@@ -118,7 +137,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--napari-python",
         help="python with napari + brainglobe-segmentation (or $DATAPIPE_NAPARI_PYTHON)",
     )
-    g.add_argument("--dry-run", action="store_true", help="print the launch command only")
+    g.add_argument(
+        "--dry-run", action="store_true", help="print the launch command only"
+    )
     g.set_defaults(func=_cmd_segment)
 
     c = sub.add_parser(
@@ -128,16 +149,20 @@ def _build_parser() -> argparse.ArgumentParser:
     c.add_argument("sample", type=Path, help="a serial_section sample directory (raw)")
     c.add_argument("dest", type=Path, help="destination root (output -> dest/<sample>)")
     c.add_argument(
-        "--analysis-root", type=Path,
+        "--analysis-root",
+        type=Path,
         help="also compress <analysis_root>/<sample> (registration/segmentation)",
     )
     c.add_argument(
-        "--archive-raw", action="store_true",
+        "--archive-raw",
+        action="store_true",
         help="bundle raw stitched/downsampled dirs to zips (default: in-place recompress)",
     )
     c.add_argument("--codec", choices=["deflate", "zstd"], default="deflate")
     c.add_argument("--datapack", help="path to the datapack CLI (or $DATAPACK / PATH)")
-    c.add_argument("--dry-run", action="store_true", help="print the datapack commands only")
+    c.add_argument(
+        "--dry-run", action="store_true", help="print the datapack commands only"
+    )
     c.set_defaults(func=_cmd_compress)
 
     pl = sub.add_parser(
@@ -154,26 +179,72 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     pl.add_argument(
-        "sample", type=Path, help="a serial_section sample directory, OR an acquisition session directory"
+        "sample",
+        type=Path,
+        help="a serial_section sample directory, OR an acquisition session directory",
     )
     pl.add_argument(
         "subject",
         help="subject to file it under; checked against the scan's or session's own record",
     )
-    pl.add_argument("data_root", type=Path, help="data tree root (<root>/<subject>/... is created)")
+    pl.add_argument(
+        "data_root", type=Path, help="data tree root (<root>/<subject>/... is created)"
+    )
     pl.add_argument(
         "--roster",
         type=Path,
         help="LEGACY only: subject map relating a pre-migration rig name to a namespace id. "
-             "Current scans name their own subject and need none.",
+        "Current scans name their own subject and need none.",
     )
     pl.add_argument("--codec", choices=["deflate", "zstd"], default="deflate")
     pl.add_argument("--datapack", help="path to the datapack CLI (or $DATAPACK / PATH)")
     pl.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="check identity and print the destination and what would move; write nothing",
     )
     pl.set_defaults(func=_cmd_place)
+
+    sp = sub.add_parser(
+        "splits",
+        help="find acquisitions the recorder broke in two, and tell them from false starts",
+        description=(
+            "Reports two classes and acts on neither. A SPLIT is one recording in two parts, worth "
+            "joining; a STUB is a recording that died seconds in and was restarted, which must be "
+            "excluded rather than appended to anything. Most close pairs are stubs, so both are "
+            "always printed."
+        ),
+    )
+    sp.add_argument(
+        "root", type=Path, help="a data tree: <root>/<subject>/<session>/<acquisition>"
+    )
+    sp.add_argument(
+        "--suffix",
+        default="pxi",
+        help="acquisition directory suffix to scan (default: pxi)",
+    )
+    sp.add_argument(
+        "--fs",
+        type=float,
+        default=30000.0,
+        help="sample rate used to turn samples into seconds",
+    )
+    sp.add_argument(
+        "--stream",
+        default="",
+        help="only measure sidecars whose path contains this, e.g. a probe stream name; "
+        "default takes the longest stream in the acquisition",
+    )
+    sp.add_argument(
+        "--min-half-minutes",
+        type=float,
+        default=15.0,
+        help="a pair whose shorter side is under this is a stub, not a split (default: 15)",
+    )
+    sp.add_argument(
+        "--json", action="store_true", help="emit JSON instead of the report"
+    )
+    sp.set_defaults(func=_cmd_splits)
     return parser
 
 
@@ -222,7 +293,9 @@ def _cmd_place(args: argparse.Namespace) -> int:
     if looks_like_session(args.sample):
         return _cmd_place_session(args)
     try:
-        plan = plan_placement(args.sample, args.subject, args.data_root, roster=args.roster)
+        plan = plan_placement(
+            args.sample, args.subject, args.data_root, roster=args.roster
+        )
     except (PlacementError, SerialSectionError) as exc:
         print(f"datapipe place: {exc}", file=sys.stderr)
         return 2
@@ -245,8 +318,10 @@ def _cmd_place(args: argparse.Namespace) -> int:
     write_manifests(plan)
     rc = subprocess.call(cmd)
     if rc != 0:
-        print(f"datapipe place: datapack exited {rc}; manifests written, data not packed",
-              file=sys.stderr)
+        print(
+            f"datapipe place: datapack exited {rc}; manifests written, data not packed",
+            file=sys.stderr,
+        )
         return rc
     append_step(plan.acq_dir, placement_record(plan))
     print(f"  placed        : {plan.acq_dir}")
@@ -256,8 +331,12 @@ def _cmd_place(args: argparse.Namespace) -> int:
 def _cmd_compress(args: argparse.Namespace) -> int:
     datapack = "datapack" if args.dry_run else resolve_datapack(args.datapack)
     cmds = compress_commands(
-        datapack, args.sample, args.dest,
-        analysis_root=args.analysis_root, archive_raw=args.archive_raw, codec=args.codec,
+        datapack,
+        args.sample,
+        args.dest,
+        analysis_root=args.analysis_root,
+        archive_raw=args.archive_raw,
+        codec=args.codec,
     )
     for label, cmd in cmds:
         print(f"[{label}] {shlex.join(cmd)}")
@@ -323,7 +402,11 @@ def _cmd_register(args: argparse.Namespace) -> int:
     if args.dry_run:
         return 0
 
-    if plan.output_dir.exists() and any(plan.output_dir.iterdir()) and not args.overwrite:
+    if (
+        plan.output_dir.exists()
+        and any(plan.output_dir.iterdir())
+        and not args.overwrite
+    ):
         state, missing = output_state(plan.output_dir)
         if state == "complete":
             # idempotent: re-running a cohort must not fail on the samples already registered
@@ -342,6 +425,24 @@ def _cmd_register(args: argparse.Namespace) -> int:
         print(f"FAIL: {sample.path.name}: brainreg exited {rc}", file=sys.stderr)
         return 1
     print(f"ok: {sample.path.name} -> {plan.output_dir}")
+    return 0
+
+
+def _cmd_splits(a: argparse.Namespace) -> int:
+    try:
+        report = find_splits(
+            a.root,
+            suffix=a.suffix,
+            fs=a.fs,
+            stream_hint=a.stream,
+            min_half_s=a.min_half_minutes * 60.0,
+        )
+    except SplitsError as exc:
+        print(f"datapipe splits: {exc}", file=sys.stderr)
+        return 2
+    print(as_json(report) if a.json else render(report))
+    # Exit 0 either way: finding splits is the tool working, not a failure. A caller that wants to
+    # gate on it should read the JSON.
     return 0
 
 
