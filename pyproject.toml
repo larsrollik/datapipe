@@ -3,10 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "datapipe"
+name = "datapipe-neuro"
 version = "0.1.0"
-description = "Dataset-aware processing & moving pipeline (registration, segmentation, compress, finalize) for lab acquisition data."
+description = "Dataset-aware pipeline for filing, registering, segmenting and compressing acquisition data."
 requires-python = ">=3.12"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Lars B. Rollik", email = "lars@rollik.me" },
+]
 dependencies = [
     "pyyaml>=6",   # parse StitchIt recipe_*.yml
     "numpy>=1.24",  # read sample counts from .npy sidecars (splits); shape only, never loaded
@@ -18,8 +23,14 @@ datapipe = "datapipe.cli:main"
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy", "ruff"]
 
-# NOTE: a later `compress` stage will add `datapack` as a dep (workspace source);
-# not yet wired since this stage only needs the loader + brainreg.
+# The `compress` stage shells out to the datapack CLI rather than importing it, so
+# datapack-neuro is not a dependency here: a run that never compresses must not have
+# to install it. Stages needing brainreg and brainglobe-segmentation are the same way.
+
+[project.urls]
+Homepage = "https://github.com/larsrollik/datapipe"
+Documentation = "https://larsrollik.github.io/datapipe/"
+"Issue Tracker" = "https://github.com/larsrollik/datapipe/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/datapipe"]
