@@ -35,6 +35,18 @@ Documentation = "https://larsrollik.github.io/datapipe/"
 [tool.hatch.build.targets.wheel]
 packages = ["src/datapipe"]
 
+# ---------------------------------------------------------------------------
+# Versioning. release.yml runs `cz bump`, which needs this section: without it the
+# workflow fails on its first run, having been copied from a repo that had one.
+# ---------------------------------------------------------------------------
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "commitizen"
+version = "0.1.0"
+version_files = ["VERSION"]
+tag_format = "v$version"
+update_changelog_on_bump = false
+
 [tool.ruff]
 line-length = 88
 src = ["src"]
