@@ -1,0 +1,20 @@
+site_name: datapipe
+site_description: Dataset-aware pipeline for filing, registering, segmenting and compressing acquisition data.
+site_url: https://larsrollik.github.io/datapipe/
+repo_url: https://github.com/larsrollik/datapipe
+repo_name: larsrollik/datapipe
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: teal
+    accent: teal
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+nav:
+  - Home: index.md

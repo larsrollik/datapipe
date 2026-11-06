@@ -175,7 +175,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "time anything is placed.\n\n"
             "The subject is checked against the directory's own record and a mismatch is refused, "
             "not warned about. For an acquisition session that record is the full prefix -- "
-            "`seq216_m1103158_308`, not its middle field."
+            "`subj042_m1000001_001`, not its middle field."
         ),
     )
     pl.add_argument(

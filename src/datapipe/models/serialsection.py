@@ -4,7 +4,7 @@ This is the **single home** for serial-section layout/recipe knowledge — locat
 the standard dirs (``stitchedImages_*``, ``downsampled_stacks/``), parse
 ``recipe_*.yml`` (sample ID, acquisition datetime, voxel sizes, channels), and
 report completeness. Other tools (datapipe stages, and eventually datapack /
-dreamteam_etl) should import this rather than re-deriving the layout.
+a downstream pipeline) should import this rather than re-deriving the layout.
 
 A StitchIt sample (``<sample>/``) typically contains::
 

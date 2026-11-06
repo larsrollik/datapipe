@@ -16,7 +16,7 @@ from datapipe.place_session import (
     read_session_identity,
 )
 
-SUBJECT = "seq216_m1103158_308"
+SUBJECT = "subj042_m1000001_001"
 SESSION = f"{SUBJECT}__20261028_100628__ephys"
 
 

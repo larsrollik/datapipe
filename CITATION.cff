@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "datapipe"
+version: "0.1.0"
+repository-code: https://github.com/larsrollik/datapipe
+url: https://github.com/larsrollik/datapipe
+# Not an SPDX identifier: the terms are custom (non-commercial research use only),
+# so CFF takes a URL rather than an id.
+license-url: https://github.com/larsrollik/datapipe/blob/main/LICENSE
+authors:
+  - family-names: Rollik
+    given-names: Lars
+    # orcid: add before the first tagged release; a placeholder id must not ship

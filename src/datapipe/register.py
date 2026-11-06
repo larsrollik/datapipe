@@ -128,7 +128,7 @@ def plan_registration(
     ``<sample>/registration``.
 
     ``output_dir`` names the directory outright, for a tree whose layout is not
-    ``<root>/<sample>/registration``: the dreamteam namespace files a registration as its
+    ``<root>/<sample>/registration``: the consuming data tree files a registration as its
     own acquisition, ``derivative/<subject>/<session>__histology/<session>__brainreg``, and
     composing that from a root is not possible. It takes precedence over ``analysis_root``.
     """
