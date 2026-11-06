@@ -23,7 +23,9 @@ import os
 import shutil
 from pathlib import Path
 
-DEFAULT_DATAPACK = "/mnt/fastdata/code/datapack/.venv/bin/datapack"
+#: Last resort after an explicit path, $DATAPACK and PATH have all come up empty. A bare name,
+#: so the failure reads as "datapack not found" rather than naming one machine's virtualenv.
+DEFAULT_DATAPACK = "datapack"
 
 
 class CompressError(RuntimeError):
@@ -31,7 +33,7 @@ class CompressError(RuntimeError):
 
 
 def resolve_datapack(explicit: str | None = None) -> str:
-    """Find the datapack CLI (arg > $DATAPACK > PATH > datapack venv)."""
+    """Find the datapack CLI (arg > $DATAPACK > PATH)."""
     cand = explicit or os.environ.get("DATAPACK") or shutil.which("datapack") or DEFAULT_DATAPACK
     if Path(cand).exists():
         return str(cand)

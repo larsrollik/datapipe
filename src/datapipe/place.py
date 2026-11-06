@@ -138,6 +138,8 @@ def subject_aliases(subject: str, roster: Path | str | None) -> set[str]:
     if roster is None:
         return names
     data = yaml.safe_load(Path(roster).read_text()) or {}
+    # ``lgcy_id`` is the roster's own field name for a subject's earlier identifier, kept as-is
+    # because the rosters on disk spell it that way; renaming it here would stop reading them.
     for entry in data.get("subjects", []) or []:
         if entry.get("lgcy_id") != subject and entry.get("name") != subject:
             continue
