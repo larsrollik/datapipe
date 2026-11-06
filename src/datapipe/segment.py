@@ -70,7 +70,9 @@ def resolve_napari_python(explicit: str | None = None) -> str:
     return str(path)
 
 
-def registration_dir(sample: Path | str, analysis_root: Path | str | None = None) -> Path:
+def registration_dir(
+    sample: Path | str, analysis_root: Path | str | None = None
+) -> Path:
     """Where this sample's brainreg output lives (mirrors register's layout)."""
     sample = Path(sample)
     base = Path(analysis_root) / sample.name if analysis_root else sample
@@ -94,8 +96,11 @@ def resolve_registration(
 
 def build_cmd(napari_python: str, reg_dir: Path, *, atlas_space: bool) -> list[str]:
     return [
-        napari_python, "-c", _LAUNCH_SCRIPT,
-        str(reg_dir), "atlas" if atlas_space else "sample",
+        napari_python,
+        "-c",
+        _LAUNCH_SCRIPT,
+        str(reg_dir),
+        "atlas" if atlas_space else "sample",
     ]
 
 

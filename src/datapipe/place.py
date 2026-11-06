@@ -117,7 +117,9 @@ def read_identity(sample: SerialSectionSample) -> Identity:
         if ident.acq_start is None:
             first = text.splitlines()[0] if text else ""
             try:
-                ident.acq_start = dt.datetime.strptime(first.split(" -- ")[0].strip(), _ACQ_TIME)
+                ident.acq_start = dt.datetime.strptime(
+                    first.split(" -- ")[0].strip(), _ACQ_TIME
+                )
             except (ValueError, IndexError):
                 pass
     return ident
@@ -150,7 +152,9 @@ def subject_aliases(subject: str, roster: Path | str | None) -> set[str]:
     return names
 
 
-def check_identity(ident: Identity, subject: str, roster: Path | str | None) -> list[str]:
+def check_identity(
+    ident: Identity, subject: str, roster: Path | str | None
+) -> list[str]:
     """Return the reasons this scan may not be filed under `subject`. Empty means it may."""
     problems: list[str] = []
 
@@ -294,7 +298,9 @@ def write_manifests(p: Placement) -> None:
         },
     }
     p.session_dir.mkdir(parents=True, exist_ok=True)
-    (p.session_dir / "session_manifest.yaml").write_text(yaml.safe_dump(session, sort_keys=False))
+    (p.session_dir / "session_manifest.yaml").write_text(
+        yaml.safe_dump(session, sort_keys=False)
+    )
 
     acq = {
         "msw_manifest_version": 1,
@@ -304,10 +310,14 @@ def write_manifests(p: Placement) -> None:
         "metadata": {"acq_type": "serial_section", "scan_identity": ident_record},
     }
     p.acq_dir.mkdir(parents=True, exist_ok=True)
-    (p.acq_dir / "acquisition_manifest.yaml").write_text(yaml.safe_dump(acq, sort_keys=False))
+    (p.acq_dir / "acquisition_manifest.yaml").write_text(
+        yaml.safe_dump(acq, sort_keys=False)
+    )
 
 
-def datapack_command(p: Placement, datapack: str, *, codec: str = "deflate") -> list[str]:
+def datapack_command(
+    p: Placement, datapack: str, *, codec: str = "deflate"
+) -> list[str]:
     """The command that moves the bytes. Placement decides where; datapack does the work."""
     return [datapack, "serial-section", str(p.source), str(p.acq_dir), "--codec", codec]
 

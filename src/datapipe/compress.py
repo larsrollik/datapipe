@@ -34,7 +34,12 @@ class CompressError(RuntimeError):
 
 def resolve_datapack(explicit: str | None = None) -> str:
     """Find the datapack CLI (arg > $DATAPACK > PATH)."""
-    cand = explicit or os.environ.get("DATAPACK") or shutil.which("datapack") or DEFAULT_DATAPACK
+    cand = (
+        explicit
+        or os.environ.get("DATAPACK")
+        or shutil.which("datapack")
+        or DEFAULT_DATAPACK
+    )
     if Path(cand).exists():
         return str(cand)
     found = shutil.which(cand)
@@ -69,7 +74,17 @@ def compress_commands(
         ana = Path(analysis_root) / sample.name
         if ana.is_dir():
             cmds.append(
-                ("analysis",
-                 [datapack, "histology", "tree", str(ana), str(dst_sample), "--codec", codec])
+                (
+                    "analysis",
+                    [
+                        datapack,
+                        "histology",
+                        "tree",
+                        str(ana),
+                        str(dst_sample),
+                        "--codec",
+                        codec,
+                    ],
+                )
             )
     return cmds

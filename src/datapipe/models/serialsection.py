@@ -122,9 +122,7 @@ def load_sample(path: Path | str) -> SerialSectionSample:
         try:
             recipe = yaml.safe_load(recipe_path.read_text()) or {}
         except yaml.YAMLError as exc:
-            raise SerialSectionError(
-                f"{path.name}: recipe unparseable: {exc}"
-            ) from exc
+            raise SerialSectionError(f"{path.name}: recipe unparseable: {exc}") from exc
         if isinstance(recipe, dict):
             sample = recipe.get("sample", {})
             acqd = recipe.get("Acquisition", {})

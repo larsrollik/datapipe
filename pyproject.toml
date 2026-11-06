@@ -21,7 +21,9 @@ dependencies = [
 datapipe = "datapipe.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "mypy", "ruff"]
+# ci.yml runs pre-commit, which drives ruff, mypy, commitizen and gitleaks from
+# .pre-commit-config.yaml. Without pre-commit declared the lint job could not start.
+dev = ["commitizen", "pytest>=8", "pytest-cov", "pre-commit", "mypy", "ruff"]
 # docs.yml installs this extra; without it the workflow fails before mkdocs runs.
 docs = ["mkdocs-material"]
 

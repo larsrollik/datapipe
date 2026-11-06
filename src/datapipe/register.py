@@ -86,7 +86,9 @@ class RegistrationPlan:
     atlas: str
     orientation: str
     additional_paths: tuple[Path, ...] = ()  # -a: extra channels, same space as main
-    extra_args: tuple[str, ...] = ()  # forwarded verbatim to brainreg (e.g. --n-free-cpus)
+    extra_args: tuple[
+        str, ...
+    ] = ()  # forwarded verbatim to brainreg (e.g. --n-free-cpus)
 
     def cmd(self, brainreg: str) -> list[str]:
         z, y, x = self.voxel_zyx
@@ -94,14 +96,19 @@ class RegistrationPlan:
             brainreg,
             str(self.input_path),
             str(self.output_dir),
-            "-v", _fmt(z), _fmt(y), _fmt(x),
+            "-v",
+            _fmt(z),
+            _fmt(y),
+            _fmt(x),
         ]
         if self.additional_paths:
             # -a is variadic; bound it by the following --orientation flag.
             cmd += ["-a", *[str(p) for p in self.additional_paths]]
         cmd += [
-            "--orientation", self.orientation,
-            "--atlas", self.atlas,
+            "--orientation",
+            self.orientation,
+            "--atlas",
+            self.atlas,
             *self.extra_args,
         ]
         return cmd

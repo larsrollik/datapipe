@@ -62,7 +62,9 @@ def test_a_consistent_session_is_placed_keeping_its_own_name(tmp_path):
 
 def test_a_session_copied_into_the_wrong_subject_folder_is_refused(tmp_path):
     """The failure this check exists for: the directory was renamed, the records were not."""
-    misfiled = _session(tmp_path, dir_name="seq999_m0000000_000__20261028_100628__ephys")
+    misfiled = _session(
+        tmp_path, dir_name="seq999_m0000000_000__20261028_100628__ephys"
+    )
     with pytest.raises(PlacementError) as exc:
         plan_session_placement(misfiled, "seq999_m0000000_000", tmp_path / "data")
     assert "disagrees with itself" in str(exc.value)
@@ -71,7 +73,9 @@ def test_a_session_copied_into_the_wrong_subject_folder_is_refused(tmp_path):
 
 def test_filing_under_an_unrelated_subject_is_refused(tmp_path):
     with pytest.raises(PlacementError) as exc:
-        plan_session_placement(_session(tmp_path), "seq999_m0000000_000", tmp_path / "data")
+        plan_session_placement(
+            _session(tmp_path), "seq999_m0000000_000", tmp_path / "data"
+        )
     assert "different animals" in str(exc.value)
 
 
@@ -100,7 +104,9 @@ def test_looks_like_session_distinguishes_a_scan_from_a_session(tmp_path):
     assert looks_like_session(_session(tmp_path))
     scan = tmp_path / "sample_202"
     (scan / "stitchedImages_100").mkdir(parents=True)
-    (scan / "recipe_sample_202_260514_125011.yml").write_text("sample: {ID: sample_202}\n")
+    (scan / "recipe_sample_202_260514_125011.yml").write_text(
+        "sample: {ID: sample_202}\n"
+    )
     assert not looks_like_session(scan)
 
 
