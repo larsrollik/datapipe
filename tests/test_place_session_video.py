@@ -186,6 +186,7 @@ def test_session_packed_by_datapack_is_placed(tmp_path: Path) -> None:
             "needs the datapack CLI with the remux mode, ffmpeg with H.264 and HEVC "
             "encoders, and MP4Box"
         )
+    assert tools is not None  # pytest.skip does not return
     datapack, ffmpeg, h264_encoder = tools
     session = _session_shell(tmp_path / "incoming")
 
